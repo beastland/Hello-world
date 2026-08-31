@@ -7,7 +7,10 @@ valid word of at least four letters that:
   - contains the key letter at least once.
 
 Words that use all seven letters are "pangrams" and are scored with a bonus,
-matching the real game's scoring rules.
+matching the real game's scoring rules. Each word is also given a "rarity
+score": every letter is worth points based on how infrequently it appears
+across the dictionary (e.g. "x" and "q" are worth far more than "e" or
+"a"), and a word's rarity score is the sum of its letters' values.
 
 Usage:
     python3 solver.py ABCDEFG D
@@ -27,9 +30,11 @@ can be found.
 from __future__ import annotations
 
 import argparse
+import math
 import string
 import sys
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 DEFAULT_WORDLIST = Path(__file__).parent / "data" / "words.txt"
@@ -38,6 +43,13 @@ FALLBACK_DOWNLOAD_URL = (
 )
 MIN_WORD_LENGTH = 4
 PANGRAM_BONUS = 7
+
+# How strongly rarity scoring spreads letter values apart. Each extra
+# doubling of a letter's rarity (relative to the most common letter) adds
+# roughly LOG_SCALE points. Tuned against the bundled dictionary so common
+# letters (e, s, i, a, ...) land at 1 point and the rarest (j, q) land
+# around 10-12.
+LOG_SCALE = 2.5
 
 
 class PuzzleError(ValueError):
@@ -129,6 +141,30 @@ def score_word(word: str, allowed_letters: set[str]) -> int:
     return points
 
 
+def compute_letter_values(words: list[str]) -> dict[str, int]:
+    """Score each letter by how rarely it's used across the dictionary.
+
+    Common letters (e, a, i, ...) score close to 1; rare letters (x, q, z,
+    j, ...) score higher, the way a Scrabble tile's value reflects how
+    seldom that letter comes up.
+    """
+    letter_counts = Counter()
+    for word in words:
+        letter_counts.update(word)
+
+    max_count = max(letter_counts.values())
+    values = {}
+    for letter in string.ascii_lowercase:
+        count = letter_counts.get(letter, 1)
+        rarity = math.log(max_count / count)
+        values[letter] = max(1, round(1 + LOG_SCALE * rarity))
+    return values
+
+
+def rarity_score_word(word: str, letter_values: dict[str, int]) -> int:
+    return sum(letter_values[c] for c in word)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("letters", nargs="?", help="The 7 available letters, e.g. ABCDEFG")
@@ -184,9 +220,16 @@ def main(argv: list[str] | None = None) -> int:
     pangrams = [w for w in found if is_pangram(w, allowed_letters)]
     total_score = sum(score_word(w, allowed_letters) for w in found)
 
+    letter_values = compute_letter_values(words)
+    total_rarity_score = sum(rarity_score_word(w, letter_values) for w in found)
+
     print(f"Letters: {''.join(sorted(allowed_letters)).upper()}  Key: {key_letter.upper()}")
+    letter_value_str = "  ".join(
+        f"{c.upper()}={letter_values[c]}" for c in sorted(allowed_letters)
+    )
+    print(f"Letter values (rarer = higher): {letter_value_str}")
     print(f"Found {len(found)} words ({len(pangrams)} pangram{'s' if len(pangrams) != 1 else ''}), "
-          f"maximum possible score {total_score}")
+          f"maximum possible score {total_score}, total rarity score {total_rarity_score}")
     print()
 
     by_length: dict[int, list[str]] = {}
@@ -198,7 +241,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"-- {length} letters ({len(words_of_length)}) --")
         for w in words_of_length:
             marker = " *PANGRAM*" if is_pangram(w, allowed_letters) else ""
-            print(f"  {w}{marker}")
+            rarity = rarity_score_word(w, letter_values)
+            print(f"  {w}{marker}  (rarity: {rarity})")
         print()
 
     if pangrams:
