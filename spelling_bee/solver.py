@@ -145,9 +145,13 @@ def main(argv: list[str] | None = None) -> int:
         "--min-length",
         type=int,
         default=MIN_WORD_LENGTH,
-        help=f"Minimum word length to accept (default: {MIN_WORD_LENGTH})",
+        help=f"Minimum word length to accept, must be 4 or greater (default: {MIN_WORD_LENGTH})",
     )
     args = parser.parse_args(argv)
+
+    if args.min_length <= 3:
+        print("Too short, dumbass!", file=sys.stderr)
+        return 2
 
     letters = args.letters_opt or args.letters
     key = args.key_opt or args.key
