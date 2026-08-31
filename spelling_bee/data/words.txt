@@ -19550,6 +19550,7 @@ bylines
 bylining
 byname
 bynames
+byob
 bypass
 bypassed
 bypasses
@@ -34872,6 +34873,7 @@ cunningnesses
 cunnings
 cunt
 cunts
+cunty
 cupbearer
 cupbearers
 cupboard
@@ -36039,6 +36041,7 @@ damnify
 damnifying
 damning
 damningly
+damnit
 damns
 damosel
 damosels
@@ -40640,11 +40643,13 @@ dickering
 dickers
 dickey
 dickeys
+dickhead
 dickie
 dickier
 dickies
 dickiest
 dicking
+dickish
 dicks
 dicky
 diclinies
@@ -57053,6 +57058,7 @@ fomenting
 foments
 fomite
 fomites
+fomo
 fond
 fondant
 fondants
@@ -71622,6 +71628,7 @@ ideologues
 ideology
 ideomotor
 ides
+idgaf
 idioblast
 idioblastic
 idioblasts
@@ -72070,6 +72077,7 @@ imbue
 imbued
 imbues
 imbuing
+imho
 imid
 imidazole
 imidazoles
@@ -84830,6 +84838,8 @@ llama
 llamas
 llano
 llanos
+lmao
+lmfao
 loach
 loaches
 load
@@ -99940,6 +99950,7 @@ noyade
 noyades
 nozzle
 nozzles
+nsfw
 nuance
 nuanced
 nuances
@@ -101447,6 +101458,7 @@ omentum
 omentums
 omer
 omers
+omfg
 omicron
 omicrons
 omikron
@@ -112413,6 +112425,7 @@ pisses
 pissing
 pissoir
 pissoirs
+pissy
 pistache
 pistaches
 pistachio
@@ -130373,6 +130386,8 @@ roentgenologists
 roentgenology
 roentgens
 roes
+rofl
+roflmao
 rogation
 rogations
 rogatory
@@ -139973,6 +139988,7 @@ smatterings
 smatters
 smaze
 smazes
+smdh
 smear
 smearcase
 smearcases
@@ -144941,6 +144957,7 @@ stewpan
 stewpans
 stews
 stey
+stfu
 sthenia
 sthenias
 sthenic
@@ -154773,6 +154790,7 @@ titulary
 tivy
 tizzies
 tizzy
+tldr
 tmeses
 tmesis
 toad
@@ -171059,6 +171077,7 @@ yirth
 yirths
 ylem
 ylems
+ymmv
 yobbo
 yobboes
 yobbos
@@ -171129,6 +171148,7 @@ yolkier
 yolkiest
 yolks
 yolky
+yolo
 yomim
 yond
 yonder
