@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Race Car Sounds!</title>
+<style>
+  :root {
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: "Comic Sans MS", "Trebuchet MS", Verdana, sans-serif;
+    background: linear-gradient(180deg, #6ec6ff 0%, #6ec6ff 55%, #7bd389 55%, #5cb85c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .sky-decor {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cloud {
+    position: absolute;
+    font-size: 3rem;
+    opacity: 0.9;
+    animation: drift 40s linear infinite;
+  }
+  .cloud.c1 { top: 8%; left: -10%; animation-duration: 45s; }
+  .cloud.c2 { top: 18%; left: -20%; animation-duration: 60s; animation-delay: -15s; font-size: 2.2rem; }
+  .cloud.c3 { top: 4%; left: -30%; animation-duration: 55s; animation-delay: -30s; font-size: 2.6rem; }
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(140vw); }
+  }
+
+  .sun {
+    position: fixed;
+    top: 6%;
+    right: 8%;
+    font-size: 4rem;
+    filter: drop-shadow(0 0 20px rgba(255,220,80,0.8));
+    animation: spin 12s linear infinite;
+    z-index: 0;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    padding: 24px 20px 40px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    color: #ffffff;
+    text-shadow: 3px 3px 0 #d9273a, -1px -1px 0 #d9273a, 1px -1px 0 #d9273a, -1px 1px 0 #d9273a;
+    margin: 0 0 10px;
+    letter-spacing: 1px;
+  }
+
+  .track {
+    position: relative;
+    background: #4a4a4a;
+    border-radius: 18px;
+    padding: 30px 10px 10px;
+    box-shadow: 0 10px 0 #333, 0 14px 20px rgba(0,0,0,0.35);
+    overflow: hidden;
+  }
+  .track::before, .track::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    height: 10px;
+    background-image: repeating-linear-gradient(90deg, #fff 0 24px, transparent 24px 48px);
+    opacity: 0.85;
+  }
+  .track::before { top: 6px; }
+  .track::after { bottom: 6px; }
+
+  .car-wrap {
+    position: relative;
+    height: 170px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .car {
+    font-size: 8rem;
+    line-height: 1;
+    display: inline-block;
+    transform-origin: 50% 90%;
+    filter: drop-shadow(0 8px 6px rgba(0,0,0,0.4));
+    cursor: pointer;
+  }
+
+  .car.idle { animation: bob 2.4s ease-in-out infinite; }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(-1deg); }
+  }
+
+  .car.revving {
+    animation: shake 0.12s linear infinite;
+  }
+  @keyframes shake {
+    0% { transform: translate(-3px, 0) rotate(-2deg); }
+    25% { transform: translate(3px, -2px) rotate(2deg); }
+    50% { transform: translate(-2px, 1px) rotate(-1deg); }
+    75% { transform: translate(3px, -1px) rotate(2deg); }
+    100% { transform: translate(-3px, 0) rotate(-2deg); }
+  }
+
+  .car.tooting {
+    animation: wobble 0.35s ease-in-out 2;
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0deg) translateY(0); }
+    30% { transform: rotate(6deg) translateY(-4px); }
+    60% { transform: rotate(-6deg) translateY(2px); }
+  }
+
+  .puff {
+    position: absolute;
+    font-size: 1.8rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .caption {
+    min-height: 2.6em;
+    margin-top: 4px;
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+    font-weight: bold;
+    color: #fff37a;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  }
+
+  button.honk-btn {
+    margin-top: 20px;
+    font-family: inherit;
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(180deg, #ff5f5f, #d9273a);
+    border: none;
+    border-radius: 60px;
+    padding: 20px 36px;
+    box-shadow: 0 6px 0 #9c1424, 0 10px 16px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.06s ease;
+    width: 100%;
+    max-width: 360px;
+    touch-action: manipulation;
+  }
+  button.honk-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #9c1424, 0 4px 10px rgba(0,0,0,0.3);
+  }
+  button.honk-btn:disabled {
+    filter: grayscale(0.3);
+    cursor: default;
+  }
+
+  .score {
+    margin-top: 14px;
+    font-size: 1rem;
+    color: #ffffffcc;
+  }
+
+  .flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .flash.go { animation: flashfade 0.25s ease-out; }
+  @keyframes flashfade {
+    0% { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sky-decor">
+  <div class="cloud c1">☁️</div>
+  <div class="cloud c2">☁️</div>
+  <div class="cloud c3">☁️</div>
+</div>
+<div class="sun">☀️</div>
+<div class="flash" id="flash"></div>
+
+<div class="stage">
+  <h1>🏁 Race Car Sounds! 🏁</h1>
+
+  <div class="track">
+    <div class="car-wrap">
+      <span class="car idle" id="car">🏎️</span>
+    </div>
+  </div>
+
+  <div class="caption" id="caption">Tap the button to hear my engine!</div>
+
+  <button class="honk-btn" id="honkBtn">🔊 Hear My Engine!</button>
+
+  <div class="score" id="score">Engine sounds: 0 &nbsp;|&nbsp; Funny sounds: 0</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var car = document.getElementById("car");
+  var btn = document.getElementById("honkBtn");
+  var caption = document.getElementById("caption");
+  var flash = document.getElementById("flash");
+  var scoreEl = document.getElementById("score");
+
+  var engineCount = 0;
+  var funnyCount = 0;
+
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  var audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new AudioCtx();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  // Creates a short burst of white noise as an AudioBuffer.
+  function makeNoiseBuffer(ctx, duration) {
+    var sampleRate = ctx.sampleRate;
+    var length = Math.max(1, Math.floor(sampleRate * duration));
+    var buffer = ctx.createBuffer(1, length, sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < length; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  // Revving engine sound: layered sawtooth oscillators with a rising/falling
+  // pitch plus filtered noise, to sound like a race car engine.
+  function playEngineSound() {
+    var ctx = getAudioCtx();
+    var now = ctx.currentTime;
+    var totalDuration = 1.6;
+
+    var master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.9, now + 0.08);
+    master.gain.setValueAtTime(0.9, now + totalDuration - 0.35);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + totalDuration);
+    master.connect(ctx.destination);
+
+    // Two detuned saw oscillators for a growly engine tone.
+    [0, -6].forEach(function (detune, idx) {
+      var osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.detune.setValueAtTime(detune, now);
+
+      var startFreq = 60;
+      var peakFreq = 260;
+      var endFreq = 90;
+
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.linearRampToValueAtTime(peakFreq, now + 0.55);
+      osc.frequency.linearRampToValueAtTime(peakFreq * 0.75, now + 0.95);
+      osc.frequency.linearRampToValueAtTime(peakFreq, now + 1.15);
+      osc.frequency.linearRampToValueAtTime(endFreq, now + totalDuration);
+
+      var oscGain = ctx.createGain();
+      oscGain.gain.value = idx === 0 ? 0.5 : 0.3;
+
+      var filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(900, now);
+      filter.frequency.linearRampToValueAtTime(2200, now + 0.55);
+      filter.frequency.linearRampToValueAtTime(1400, now + totalDuration);
+
+      osc.connect(filter);
+      filter.connect(oscGain);
+      oscGain.connect(master);
+
+      osc.start(now);
+      osc.stop(now + totalDuration + 0.05);
+    });
+
+    // Filtered noise layer for engine "rumble/exhaust" texture.
+    var noise = ctx.createBufferSource();
+    noise.buffer = makeNoiseBuffer(ctx, totalDuration);
+    var noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.setValueAtTime(300, now);
+    noiseFilter.frequency.linearRampToValueAtTime(700, now + 0.6);
+    noiseFilter.Q.value = 0.7;
+    var noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.25;
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(master);
+    noise.start(now);
+    noise.stop(now + totalDuration);
+
+    return totalDuration * 1000;
+  }
+
+  // Silly fart sound: a wobbly low-pitched square/sawtooth oscillator with
+  // a fast random pitch wiggle plus a burst of noise.
+  function playFunnySound() {
+    var ctx = getAudioCtx();
+    var now = ctx.currentTime;
+    var totalDuration = 0.9;
+
+    var master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.8, now + 0.05);
+    master.gain.setValueAtTime(0.8, now + totalDuration - 0.25);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + totalDuration);
+    master.connect(ctx.destination);
+
+    var osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+
+    var startFreq = 140 + Math.random() * 30;
+    osc.frequency.setValueAtTime(startFreq, now);
+
+    // Random wobble to make each "toot" sound a little different.
+    var t = now;
+    var steps = 10;
+    for (var i = 0; i <= steps; i++) {
+      t = now + (totalDuration * i) / steps;
+      var wobble = startFreq * (0.35 + Math.random() * 0.5) * (1 - i / steps);
+      osc.frequency.linearRampToValueAtTime(Math.max(35, wobble), t);
+    }
+
+    var filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 900;
+
+    var oscGain = ctx.createGain();
+    oscGain.gain.value = 0.7;
+
+    osc.connect(filter);
+    filter.connect(oscGain);
+    oscGain.connect(master);
+    osc.start(now);
+    osc.stop(now + totalDuration + 0.05);
+
+    // A little burst of noise at the start for texture.
+    var noise = ctx.createBufferSource();
+    noise.buffer = makeNoiseBuffer(ctx, 0.15);
+    var noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    noise.connect(noiseGain);
+    noiseGain.connect(master);
+    noise.start(now);
+
+    return totalDuration * 1000;
+  }
+
+  function spawnPuffs(emoji, count) {
+    var wrap = car.parentElement;
+    for (var i = 0; i < count; i++) {
+      (function (i) {
+        var puff = document.createElement("span");
+        puff.className = "puff";
+        puff.textContent = emoji;
+        var offsetX = (Math.random() - 0.5) * 60;
+        puff.style.left = "calc(50% + " + offsetX + "px)";
+        puff.style.bottom = "10px";
+        wrap.appendChild(puff);
+
+        var delay = i * 90;
+        setTimeout(function () {
+          puff.animate(
+            [
+              { transform: "translate(0,0) scale(0.6)", opacity: 0 },
+              { transform: "translate(" + (offsetX * 0.4) + "px,-40px) scale(1.1)", opacity: 1, offset: 0.3 },
+              { transform: "translate(" + (offsetX * 0.8) + "px,-100px) scale(1.3)", opacity: 0 }
+            ],
+            { duration: 900, easing: "ease-out" }
+          );
+        }, delay);
+
+        setTimeout(function () {
+          puff.remove();
+        }, delay + 950);
+      })(i);
+    }
+  }
+
+  var engineMessages = [
+    "VROOOOOM! 🏎️💨",
+    "RRRRRRR! Zoom zoom!",
+    "Engine's roaring! 🔥",
+    "VRRROOM VRRROOM!",
+    "Ready, set, ZOOM!"
+  ];
+  var funnyMessages = [
+    "PFFFFT! 💨😂",
+    "Uh oh... a toot! 🤭",
+    "PBBBBT! Silly car!",
+    "Someone had beans! 🫘😆",
+    "TOOT TOOT... oops!"
+  ];
+
+  function updateScore() {
+    scoreEl.textContent =
+      "Engine sounds: " + engineCount + " | Funny sounds: " + funnyCount;
+  }
+
+  function playRandomSound() {
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    var isEngine = Math.random() < 0.5;
+    var duration;
+
+    car.classList.remove("idle");
+    flash.classList.remove("go");
+    void flash.offsetWidth; // restart animation
+    flash.classList.add("go");
+
+    if (isEngine) {
+      duration = playEngineSound();
+      car.classList.add("revving");
+      caption.textContent = engineMessages[Math.floor(Math.random() * engineMessages.length)];
+      spawnPuffs("💨", 4);
+      engineCount++;
+    } else {
+      duration = playFunnySound();
+      car.classList.add("tooting");
+      caption.textContent = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+      spawnPuffs("💩💨", 3);
+      funnyCount++;
+    }
+    updateScore();
+
+    setTimeout(function () {
+      car.classList.remove("revving", "tooting");
+      car.classList.add("idle");
+      btn.disabled = false;
+    }, Math.max(duration, 500) + 150);
+  }
+
+  btn.addEventListener("click", playRandomSound);
+  car.addEventListener("click", playRandomSound);
+})();
+</script>
+
+</body>
+</html>
