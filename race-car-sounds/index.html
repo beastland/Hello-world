@@ -99,20 +99,69 @@
     position: relative;
     height: 170px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
   }
 
   .car {
-    font-size: 8rem;
+    width: 78%;
+    max-width: 300px;
     line-height: 1;
-    display: inline-block;
-    transform-origin: 50% 90%;
+    display: block;
+    transform-origin: 50% 85%;
     filter: drop-shadow(0 8px 6px rgba(0,0,0,0.4));
     cursor: pointer;
   }
+  .car svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
 
   .car.idle { animation: bob 2.4s ease-in-out infinite; }
+
+  .car.swapping { animation: pop-in 0.35s ease-out; }
+  @keyframes pop-in {
+    0% { transform: scale(0.6) rotate(-4deg); opacity: 0.2; }
+    60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.85);
+    color: #333;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+    touch-action: manipulation;
+  }
+  .nav-arrow:active { transform: translateY(-50%) translateY(3px); box-shadow: none; }
+  .nav-arrow.left { left: 4px; }
+  .nav-arrow.right { right: 4px; }
+
+  .car-name {
+    margin-top: 10px;
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  }
+
+  .car-counter {
+    margin-top: 2px;
+    font-size: 0.95rem;
+    color: #ffffffb0;
+  }
 
   @keyframes bob {
     0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -217,11 +266,16 @@
 
   <div class="track">
     <div class="car-wrap">
-      <span class="car idle" id="car">🏎️</span>
+      <button class="nav-arrow left" id="prevCarBtn" aria-label="Previous car">◀</button>
+      <div class="car idle" id="car"></div>
+      <button class="nav-arrow right" id="nextCarBtn" aria-label="Next car">▶</button>
     </div>
   </div>
 
-  <div class="caption" id="caption">Tap the button to hear my engine!</div>
+  <div class="car-name" id="carName"></div>
+  <div class="car-counter" id="carCounter"></div>
+
+  <div class="caption" id="caption">Tap the car to see another one, then hit the button!</div>
 
   <button class="honk-btn" id="honkBtn">🔊 Hear My Engine!</button>
 
@@ -237,9 +291,119 @@
   var caption = document.getElementById("caption");
   var flash = document.getElementById("flash");
   var scoreEl = document.getElementById("score");
+  var carName = document.getElementById("carName");
+  var carCounter = document.getElementById("carCounter");
+  var prevCarBtn = document.getElementById("prevCarBtn");
+  var nextCarBtn = document.getElementById("nextCarBtn");
 
   var engineCount = 0;
   var funnyCount = 0;
+
+  // A roster of cool cars to cycle through. Each is drawn as a simple
+  // stylized silhouette (not a real photo) so the app works fully offline.
+  var cars = [
+    { name: "Honda S2000", body: "#1E5FD9", convertible: true, spoiler: "none", wheel: "#d8d8d8", pitch: 1.15 },
+    { name: "Nissan Skyline GT-R", body: "#B8BEC4", convertible: false, spoiler: "wing", wheel: "#e0b23c", pitch: 1.05 },
+    { name: "Porsche 911", body: "#F5C400", convertible: false, spoiler: "duck", wheel: "#222222", pitch: 1.1 },
+    { name: "Audi Quattro", body: "#f4f4f4", convertible: false, spoiler: "none", wheel: "#c9c9c9", stripes: "rally", antenna: true, pitch: 1.0 },
+    { name: "Chevy Camaro", body: "#FFD400", convertible: false, spoiler: "lip", wheel: "#222222", stripes: "black", pitch: 0.9 },
+    { name: "Chevy Corvette", body: "#C8102E", convertible: false, spoiler: "none", wheel: "#d8d8d8", pitch: 0.95 },
+    { name: "Ford Mustang", body: "#1F4E8C", convertible: false, spoiler: "lip", wheel: "#222222", stripes: "white", pitch: 0.9 },
+    { name: "Toyota Supra", body: "#FF6A00", convertible: false, spoiler: "bigwing", wheel: "#222222", pitch: 1.2 }
+  ];
+  var carIndex = 0;
+
+  function svgOpen() {
+    return '<svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">';
+  }
+
+  function buildCarSVG(cfg) {
+    var body = cfg.body;
+    var wheel = cfg.wheel;
+    var parts = [];
+
+    parts.push(svgOpen());
+    parts.push('<ellipse cx="120" cy="100" rx="104" ry="7" fill="rgba(0,0,0,0.25)"/>');
+
+    // Cabin / roof (skipped for convertibles, which get low headrests instead).
+    if (cfg.convertible) {
+      parts.push('<rect x="98" y="46" width="16" height="20" rx="6" fill="' + body + '"/>');
+      parts.push('<rect x="138" y="46" width="16" height="20" rx="6" fill="' + body + '"/>');
+      parts.push('<path d="M160,64 Q172,46 188,50 L188,64 Z" fill="#bfe6f5" opacity="0.85"/>');
+    } else {
+      parts.push('<path d="M70,64 Q75,32 96,28 L154,28 Q177,32 184,64 Z" fill="' + body + '"/>');
+      parts.push('<path d="M79,60 Q83,38 99,34 L151,34 Q168,38 175,60 Z" fill="#bfe6f5" opacity="0.85"/>');
+    }
+
+    if (cfg.antenna) {
+      parts.push('<rect x="122" y="12" width="2" height="18" fill="#666"/>');
+      parts.push('<circle cx="123" cy="12" r="2.5" fill="#666"/>');
+    }
+
+    // Main body (chassis) sits on top of the cabin shape so the roof reads
+    // as "inset" and the body silhouette stays one continuous car shape.
+    parts.push('<rect x="20" y="64" width="200" height="26" rx="13" fill="' + body + '"/>');
+
+    // Racing stripes, drawn over the body only so they never spill outside it.
+    if (cfg.stripes === "black" || cfg.stripes === "white") {
+      var stripeColor = cfg.stripes === "black" ? "#111111" : "#f5f5f5";
+      parts.push('<rect x="108" y="64" width="9" height="26" fill="' + stripeColor + '"/>');
+      parts.push('<rect x="123" y="64" width="9" height="26" fill="' + stripeColor + '"/>');
+    } else if (cfg.stripes === "rally") {
+      parts.push('<g transform="rotate(-24 165 76)">');
+      parts.push('<rect x="150" y="60" width="7" height="32" fill="#C8102E"/>');
+      parts.push('<rect x="162" y="60" width="7" height="32" fill="#1F4E8C"/>');
+      parts.push('</g>');
+    }
+
+    // Spoiler variants.
+    if (cfg.spoiler === "lip") {
+      parts.push('<rect x="22" y="59" width="20" height="4" rx="2" fill="#222"/>');
+    } else if (cfg.spoiler === "duck") {
+      parts.push('<path d="M22,60 L48,60 L40,50 L28,50 Z" fill="#222"/>');
+    } else if (cfg.spoiler === "wing") {
+      parts.push('<rect x="30" y="46" width="3" height="16" fill="#222"/>');
+      parts.push('<rect x="54" y="46" width="3" height="16" fill="#222"/>');
+      parts.push('<rect x="25" y="42" width="37" height="6" rx="2" fill="#222"/>');
+    } else if (cfg.spoiler === "bigwing") {
+      parts.push('<rect x="28" y="36" width="3" height="26" fill="#111"/>');
+      parts.push('<rect x="58" y="36" width="3" height="26" fill="#111"/>');
+      parts.push('<rect x="22" y="30" width="44" height="7" rx="2" fill="#111"/>');
+    }
+
+    // Headlight / taillight.
+    parts.push('<ellipse cx="207" cy="72" rx="8" ry="5" fill="#fff9c4"/>');
+    parts.push('<rect x="24" y="69" width="10" height="8" rx="2" fill="#ff5252"/>');
+
+    // Wheels.
+    [64, 184].forEach(function (cx) {
+      parts.push('<circle cx="' + cx + '" cy="92" r="18" fill="#161616"/>');
+      parts.push('<circle cx="' + cx + '" cy="92" r="9" fill="' + wheel + '"/>');
+      parts.push('<circle cx="' + cx + '" cy="92" r="3" fill="#555"/>');
+    });
+
+    parts.push('</svg>');
+    return parts.join("");
+  }
+
+  function renderCar(index) {
+    carIndex = ((index % cars.length) + cars.length) % cars.length;
+    var cfg = cars[carIndex];
+    car.innerHTML = buildCarSVG(cfg);
+    carName.textContent = cfg.name;
+    carCounter.textContent = (carIndex + 1) + " / " + cars.length;
+    car.classList.remove("swapping");
+    void car.offsetWidth; // restart animation
+    car.classList.add("swapping");
+  }
+
+  function nextCar() {
+    renderCar(carIndex + 1);
+  }
+
+  function prevCar() {
+    renderCar(carIndex - 1);
+  }
 
   var AudioCtx = window.AudioContext || window.webkitAudioContext;
   var audioCtx = null;
@@ -267,8 +431,10 @@
   }
 
   // Revving engine sound: layered sawtooth oscillators with a rising/falling
-  // pitch plus filtered noise, to sound like a race car engine.
-  function playEngineSound() {
+  // pitch plus filtered noise, to sound like a race car engine. pitchMultiplier
+  // gives each car in the roster a slightly different engine character.
+  function playEngineSound(pitchMultiplier) {
+    pitchMultiplier = pitchMultiplier || 1;
     var ctx = getAudioCtx();
     var now = ctx.currentTime;
     var totalDuration = 1.6;
@@ -286,9 +452,9 @@
       osc.type = "sawtooth";
       osc.detune.setValueAtTime(detune, now);
 
-      var startFreq = 60;
-      var peakFreq = 260;
-      var endFreq = 90;
+      var startFreq = 60 * pitchMultiplier;
+      var peakFreq = 260 * pitchMultiplier;
+      var endFreq = 90 * pitchMultiplier;
 
       osc.frequency.setValueAtTime(startFreq, now);
       osc.frequency.linearRampToValueAtTime(peakFreq, now + 0.55);
@@ -452,7 +618,7 @@
     flash.classList.add("go");
 
     if (isEngine) {
-      duration = playEngineSound();
+      duration = playEngineSound(cars[carIndex].pitch);
       car.classList.add("revving");
       caption.textContent = engineMessages[Math.floor(Math.random() * engineMessages.length)];
       spawnPuffs("💨", 4);
@@ -474,7 +640,11 @@
   }
 
   btn.addEventListener("click", playRandomSound);
-  car.addEventListener("click", playRandomSound);
+  car.addEventListener("click", nextCar);
+  nextCarBtn.addEventListener("click", nextCar);
+  prevCarBtn.addEventListener("click", prevCar);
+
+  renderCar(0);
 })();
 </script>
 
